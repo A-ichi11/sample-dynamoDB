@@ -9,13 +9,14 @@ import (
 	"github.com/guregu/dynamo"
 )
 
-type Sample struct {
+type User struct {
 	UserID string `dynamo:"UserID,hash"`
 	Name   string `dynamo:"Name,range"`
 	Age    int    `dynamo:"Age"`
 	Text   string `dynamo:"Text"`
 }
 
+// 本来はenvから取得した方が良い
 var DYNAMO_ENDPOINT = "http://localhost:8000"
 
 func main() {
@@ -31,36 +32,41 @@ func main() {
 
 	db := dynamo.New(sess)
 
-	db.Table("Samples").DeleteTable().Run()
+	// テーブル作成をする為に、一度テーブルを削除します
+	db.Table("UserTable").DeleteTable().Run()
 
 	// テーブル作成
-	err = db.CreateTable("Samples", Sample{}).Run()
+	err = db.CreateTable("UserTable", User{}).Run()
 	if err != nil {
 		panic(err)
 	}
+	// テーブルの指定
+	table := db.Table("UserTable")
+
+	// User構造体をuser変数に定義
+	var user User
 
 	// DBにPutします
-	table := db.Table("Samples")
-	err = table.Put(&Sample{UserID: "1", Name: "Test1", Age: 20}).Run()
+	err = table.Put(&User{UserID: "1234", Name: "太郎", Age: 20}).Run()
 	if err != nil {
 		panic(err)
 	}
 
 	// DBからGetします
-	var sampleDb Sample
-	err = table.Get("UserID", "1").Range("Name", dynamo.Equal, "Test1").One(&sampleDb)
+
+	err = table.Get("UserID", "1234").Range("Name", dynamo.Equal, "太郎").One(&user)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("GetDB%+v\n", sampleDb)
+	fmt.Printf("GetDB%+v\n", user)
 
 	// DBのデータをUpdateします
 	text := "新しいtextです"
-	err = table.Update("UserID", "1").Range("Name", "Test1").Set("Text", text).Value(&sampleDb)
+	err = table.Update("UserID", "1234").Range("Name", "太郎").Set("Text", text).Value(&user)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("UpdateDB%+v\n", sampleDb)
+	fmt.Printf("UpdateDB%+v\n", user)
 
 	// DBのデータをDeleteします
 	err = table.Delete("UserID", "1").Range("Name", "Test1").Run()
@@ -69,7 +75,7 @@ func main() {
 	}
 
 	// Delete出来ているか確認
-	err = table.Get("UserID", "1").Range("Name", dynamo.Equal, "Test1").One(&sampleDb)
+	err = table.Get("UserID", "1").Range("Name", dynamo.Equal, "Test1").One(&user)
 	if err != nil {
 		// Delete出来ていれば、dynamo: no item found のエラーとなる
 		fmt.Println("getError:", err)
