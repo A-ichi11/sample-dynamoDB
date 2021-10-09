@@ -17,12 +17,13 @@ type User struct {
 }
 
 // 本来はenvから取得した方が良い
-var DYNAMO_ENDPOINT = "http://localhost:8000"
+const AWS_REGION = "ap-northeast-1"
+const DYNAMO_ENDPOINT = "http://localhost:8000"
 
 func main() {
 	// クライアントの設定
 	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String("ap-northeast-1"),
+		Region:      aws.String(AWS_REGION),
 		Endpoint:    aws.String(DYNAMO_ENDPOINT),
 		Credentials: credentials.NewStaticCredentials("dummy", "dummy", "dummy"),
 	})
@@ -80,5 +81,4 @@ func main() {
 		// Delete出来ていれば、dynamo: no item found のエラーとなる
 		fmt.Println("getError:", err)
 	}
-
 }
